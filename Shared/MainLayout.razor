@@ -1,0 +1,103 @@
+@inherits LayoutComponentBase
+@inject NavigationManager _navigationManager
+@using System.Security.Claims
+
+<MatAppBarContainer>
+    <MatAppBar Fixed="true">
+        <MatAppBarRow>
+            <MatAppBarSection>
+                <MatIconButton OnClick="MenuClickHandle" Icon="@MatIconNames.Menu"></MatIconButton>
+                <MatAppBarTitle>Latino .NET Online App</MatAppBarTitle>
+            </MatAppBarSection>
+            <MatAppBarSection Align="@MatAppBarSectionAlign.End">
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="col-md-2">
+                            <img src="@identity.Claims.First(a => a.Type == ClaimTypes.Thumbprint)?.Value" alt="" height="50" />
+                        </div>
+                        <div class="col-md-2">
+                            <h5>@identity.Claims.First(a => a.Type == ClaimTypes.Surname)?.Value</h5>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <MatButton Raised="true" Icon="@MatIconNames.People" OnClick="@(() => MenuItemClickHandle("/api/account/login", true))">Log In with GitHub</MatButton>
+                    </NotAuthorized>
+                </AuthorizeView>
+                <MatIconButton Icon="@MatIconNames.Favorite" Link="https://latinonet.online"></MatIconButton>
+            </MatAppBarSection>
+        </MatAppBarRow>
+    </MatAppBar>
+
+
+    <MatAppBarContent>
+
+    </MatAppBarContent>
+</MatAppBarContainer>
+<MatDrawerContainer Style="width: 100vw; height: 90vh; margin-top:64px;">
+    <MatDrawer @bind-Opened="@Opened" Mode="@MatDrawerMode.Modal">
+        <MatNavMenu>
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("events"))"><MatIcon Icon="@MatIconNames.Event"></MatIcon>&nbsp; Eventos </MatNavItem>
+
+            <AuthorizeView Policy=@PolicieRoles.Organizer>
+                <MatNavItem OnClick="@(() => MenuItemClickHandle("links"))"><MatIcon Icon="@MatIconNames.Link"></MatIcon>&nbsp; Links To Redirect </MatNavItem>
+                <MatNavItem OnClick="@(() => MenuItemClickHandle("stream"))"><MatIcon Icon="@MatIconNames.View_stream"></MatIcon>&nbsp; Stream </MatNavItem>
+
+                <MatNavSubMenu>
+                    <MatNavSubMenuHeader>
+                        <MatNavItem AllowSelection="false"><MatIcon Icon="@MatIconNames.Wifi"></MatIcon>&nbsp; Social</MatNavItem>
+                    </MatNavSubMenuHeader>
+                    <MatNavSubMenuList>
+                        <MatNavItem OnClick="@(() => MenuItemClickHandle("twitter"))">&nbsp; Twitter </MatNavItem>
+                    </MatNavSubMenuList>
+                </MatNavSubMenu>
+
+                <MatNavItem OnClick="@(() => MenuItemClickHandle("easycron"))"><MatIcon Icon="@MatIconNames.Schedule"></MatIcon>&nbsp; EasyCron </MatNavItem>
+            </AuthorizeView>
+
+            <AuthorizeView Policy=@PolicieRoles.Admin>
+                <MatNavItem OnClick="@(() => MenuItemClickHandle("users"))"><MatIcon Icon="@MatIconNames.People"></MatIcon>&nbsp; Users </MatNavItem>
+            </AuthorizeView>
+
+            <AuthorizeView Policy=@PolicieRoles.Speaker>
+                <MatNavItem OnClick="@(() => MenuItemClickHandle("polls"))"><MatIcon Icon="@MatIconNames.Poll"></MatIcon>&nbsp; Polls </MatNavItem>
+            </AuthorizeView>
+
+            <MatDivider></MatDivider>
+            <AuthorizeView>
+                <MatNavItem OnClick="@(() => MenuItemClickHandle("/api/account/logout", true))"><MatIcon Icon="@MatIconNames.Close"></MatIcon>&nbsp; Log Out</MatNavItem>
+            </AuthorizeView>
+        </MatNavMenu>
+    </MatDrawer>
+    <MatDrawerContent ChildContent="@Body">
+
+    </MatDrawerContent>
+</MatDrawerContainer>
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState> authState { get; set; }
+
+
+    private System.Security.Claims.ClaimsIdentity identity;
+    protected async override void OnParametersSet()
+    {
+        if (authState != null)
+        {
+            identity = (await authState).User.Identities.FirstOrDefault();
+        }
+    }
+
+    bool Opened = false;
+
+    void MenuClickHandle()
+    {
+        Opened = !Opened;
+    }
+
+
+    void MenuItemClickHandle(string uri, bool forceLoad = false)
+    {
+        _navigationManager.NavigateTo(uri, forceLoad);
+        Opened = false;
+    }
+}

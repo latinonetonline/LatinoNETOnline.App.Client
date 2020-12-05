@@ -1,0 +1,100 @@
+﻿<MatButton Raised="true" OnClick="SaveArticle" Icon="@MatIconNames.Edit">Guardar</MatButton>
+
+@if (!string.IsNullOrWhiteSpace(Article.Html))
+{
+    <MatButton Raised="true" Link=@($"https://latinonet.online/blog#posts/{Event.GetSlug()}") Icon="@MatIconNames.Pageview">Ver Articulo</MatButton>
+}
+
+@if (ArticleExist != null && !ArticleExist.IsPublish && Article.PublicationStatus == PublicationStatus.NotPublished)
+{
+    <MatButton Raised="true" OnClick="Publish" Icon="@MatIconNames.Update">Publicar</MatButton>
+
+}
+
+@if (Article.PublicationStatus == PublicationStatus.Publishing)
+{
+    <MatButton Raised="true" Disabled="true" Icon="@MatIconNames.Update">Publicando...</MatButton>
+
+}
+
+@code {
+    [Parameter]
+    public Article Article { get; set; }
+
+    [Parameter]
+    public Event Event { get; set; }
+
+    [Parameter]
+    public BlazoredTextEditor QuillHtml { get; set; }
+
+    [Parameter]
+    public IBlogClientService BlogService { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSaved { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnError { get; set; }
+
+    [Parameter]
+    public EventCallback OnSaving { get; set; }
+
+    public ArticleExist ArticleExist { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ArticleExist = (await BlogService.IsPublish(Event.GetSlug())).Result;
+            StateHasChanged();
+        }
+    }
+
+
+    async Task SaveArticle()
+    {
+        if (Article.Description.Length > 200 && OnError.HasDelegate)
+        {
+            await OnError.InvokeAsync("La descripción es mayor a 200 caracteres");
+        }
+        else
+        {
+            if (OnSaving.HasDelegate)
+                await OnSaving.InvokeAsync(null);
+
+            StateHasChanged();
+
+            Article.Slug = Event.GetSlug();
+            Article.Html = await this.QuillHtml.GetHTML();
+            Article.ImageLink = Event.ImageUrl;
+            Article.Date = Event.Date.Date;
+            Article.Speaker = Event.Speaker;
+
+            Response res = await BlogService.UpdateArticleAsync(Article);
+
+            if (res.Success)
+            {
+                await OnSaved.InvokeAsync("Se guardo el articulo con exito!");
+            }
+            else
+            {
+                await OnError.InvokeAsync("Hubo un error al crear un nuevo evento: " + res.Message);
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    async Task Publish()
+    {
+        Article.PublicationStatus = PublicationStatus.Publishing;
+        StateHasChanged();
+
+        await BlogService.Publish(Event.GetSlug());
+
+        Article.PublicationStatus = PublicationStatus.Published;
+        StateHasChanged();
+    }
+
+}

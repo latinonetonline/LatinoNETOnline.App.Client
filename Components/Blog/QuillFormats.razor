@@ -1,0 +1,81 @@
+﻿<span class="ql-formats">
+    <button class="ql-link"></button>
+    <button id="btn-image" @onclick="@AddImage" class="fa fa-picture-o"></button>
+    <button id="btn-youtube" @onclick="@AddYoutubeIFrame" class="fa fa-youtube"></button>
+    <button id="btn-twitter" @onclick="@AddTwitterIFrame" class="fa fa-twitter"></button>
+    <button id="btn-code" @onclick="@AddHtml" class="fa fa-code"></button>
+
+</span>
+
+@code {
+
+    [Parameter]
+    public IJSRuntime JsRuntime { get; set; }
+
+    [Parameter]
+    public BlazoredTextEditor QuillHtml { get; set; }
+
+    async Task AddYoutubeIFrame()
+    {
+        string href = await JsRuntime.InvokeAsync<string>("prompt", "Enter Youtube Link");
+        if (!string.IsNullOrWhiteSpace(href))
+        {
+            var youtubeMatch =
+            new Regex(@"youtu(?:\.be|be\.com)/(?:.*v(?:/|=)|(?:.*/)?)([a-zA-Z0-9-_]+)")
+            .Match(href);
+            string youtubeId = youtubeMatch.Success ? youtubeMatch.Groups[1].Value : string.Empty;
+
+            string QuillContent = await this.QuillHtml.GetHTML();
+            string iframeYoutube = $"<p><iframe width='560' height='315' src='https://www.youtube.com/embed/{youtubeId}' frameborder='0' allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture' allowfullscreen></iframe></p>";
+
+
+            await this.QuillHtml.LoadHTMLContent(QuillContent + iframeYoutube);
+        }
+
+        StateHasChanged();
+    }
+
+    async Task AddImage()
+    {
+        string href = await JsRuntime.InvokeAsync<string>("prompt", "Enter Image Link");
+        if (!string.IsNullOrWhiteSpace(href))
+        {
+            string QuillContent = await this.QuillHtml.GetHTML();
+            string iframeYoutube = $"<p><img src='{href}'/></p>";
+
+
+            await this.QuillHtml.LoadHTMLContent(QuillContent + iframeYoutube);
+        }
+
+        StateHasChanged();
+    }
+    async Task AddTwitterIFrame()
+    {
+        string href = await JsRuntime.InvokeAsync<string>("prompt", "Enter Tweet Link");
+        if (!string.IsNullOrWhiteSpace(href))
+        {
+            string QuillContent = await this.QuillHtml.GetHTML();
+            string iframeTwitter = $"<p><iframe border=0 frameborder=0 height=500 width=550 src='https://twitframe.com/show?url={href}'></iframe></p>";
+
+
+            await this.QuillHtml.LoadHTMLContent(QuillContent + iframeTwitter);
+        }
+
+        StateHasChanged();
+    }
+
+    async Task AddHtml()
+    {
+        string html = await JsRuntime.InvokeAsync<string>("prompt", "Enter Html Code");
+        if (!string.IsNullOrWhiteSpace(html))
+        {
+            string QuillContent = await this.QuillHtml.GetHTML();
+            string htmlInserting = $"<p>{html}</p>";
+
+
+            await this.QuillHtml.LoadHTMLContent(QuillContent + htmlInserting);
+        }
+
+        StateHasChanged();
+    }
+}

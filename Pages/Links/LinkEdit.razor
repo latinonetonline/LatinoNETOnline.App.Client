@@ -1,0 +1,108 @@
+﻿@page "/links/edit/{LinkName}"
+@attribute [Authorize(Policy = PolicieRoles.Organizer)]
+@inject NavigationManager navigationManager
+@inject ILinkClientService linkService
+
+<MatSnackbar @bind-IsOpen="@snackBarIsOpen">
+    <MatSnackbarContent>Hubo un error al crear un nuevo Link: @message </MatSnackbarContent>
+</MatSnackbar>
+<div class="row justify-content-center">
+
+    @if (isLoading)
+    {
+        <MatProgressBar Indeterminate="true"></MatProgressBar>
+    }
+    else
+    {
+        <AutoSaveEditForm Id=@($"links-edit-{LinkName}") Model="Link" OnValidSubmit="FormSubmitted">
+            <DataAnnotationsValidator />
+            <div class="mat-layout-grid">
+                <div class="mat-layout-grid-inner">
+                    <div class="mat-layout-grid-cell-span-12">
+                        <MatCard class="demo-mat-card">
+                            <div class="demo-mat-card-content">
+                                <MatHeadline6 class="demo-mat-card-clean-margin">
+                                    Nuevo Link
+                                </MatHeadline6>
+
+                            </div>
+                            <MatCardContent>
+                                <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                                    <p>
+                                        <MatTextField @bind-Value="@Link.Name" Label="Nombre" ReadOnly="true" FullWidth="true"></MatTextField>
+                                        <ValidationMessage For="@(() => Link.Name)" />
+                                    </p>
+                                </MatBody2>
+                            </MatCardContent>
+                            <MatCardContent>
+                                <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                                    <p>
+                                        <MatTextField @bind-Value="@Link.Url" Label="Url" FullWidth="true"></MatTextField>
+                                        <ValidationMessage For="@(() => Link.Url)" />
+                                    </p>
+                                </MatBody2>
+                            </MatCardContent>
+                            <MatCardActions>
+                                <MatCardActionButtons>
+                                    <MatButton Raised="true" Type="submit" Icon="@MatIconNames.Edit">Editar</MatButton>
+                                </MatCardActionButtons>
+
+                                <MatCardActionIcons>
+                                    <MatIconButton Icon="@MatIconNames.Close" OnClick="CancelClickHandle"></MatIconButton>
+                                </MatCardActionIcons>
+                            </MatCardActions>
+                        </MatCard>
+                    </div>
+                </div>
+            </div>
+        </AutoSaveEditForm>
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public string LinkName { get; set; }
+
+    public LinkModel Link = new LinkModel();
+    bool isLoading = false;
+    bool snackBarIsOpen = false;
+    string message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Link = (await linkService.GetAsync(LinkName)).Result;
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    async Task FormSubmitted(EditContext editContext)
+    {
+        if (editContext.Validate())
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            Response res = await linkService.UpdateAsync(Link);
+
+            if (res.Success)
+            {
+                navigationManager.NavigateTo("links");
+            }
+            else
+            {
+                message = res.Message;
+                snackBarIsOpen = true;
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    void CancelClickHandle()
+    {
+        navigationManager.NavigateTo("links");
+    }
+
+}

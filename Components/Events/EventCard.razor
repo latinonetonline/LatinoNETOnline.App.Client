@@ -1,0 +1,153 @@
+﻿@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject IEventClientService eventService
+
+<div class="mat-layout-grid-cell-span-3-desktop mat-layout-grid-cell-span-4-tablet mat-layout-grid-cell-span-4-phone">
+    @if (isLoading)
+    {
+        <MatProgressBar Indeterminate="true"></MatProgressBar>
+    }
+    <MatCard class="demo-mat-card">
+        <MatCardContent>
+            <MatCardMedia Wide="true" ImageUrl="@GetImageUrl()"></MatCardMedia>
+            @if (Event.IsDraft)
+            {
+                <div class="draft">Draft</div>
+            }
+            <div class="demo-mat-card-content">
+                <MatHeadline6 class="demo-mat-card-clean-margin">
+                    @Event.Title - @Event.Speaker
+                </MatHeadline6>
+                <MatSubtitle2 class="demo-mat-card-clean-margin">
+                    @Event.Date.ToString("dd/MM/yyyy")
+                </MatSubtitle2>
+            </div>
+
+            <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                @if (Event.Description.Length > 200)
+                {
+                    @($"{Event.Description.Substring(0, 197)}...");
+                }
+                else
+                {
+                    @Event.Description;
+                }
+            </MatBody2>
+        </MatCardContent>
+        @if (!isLoading)
+        {
+            <MatCardActions>
+
+                <AuthorizeView Policy="@PolicieRoles.Organizer">
+                    <MatButton OnClick="EditClickHandle">Ver</MatButton>
+                </AuthorizeView>
+
+                <AuthorizeView Policy=@(Event.IsDraft ? PolicieRoles.Organizer : PolicieRoles.Admin)>
+                    <MatButton OnClick="DeleteClickHandle">Eliminar</MatButton>
+                </AuthorizeView>
+
+                @if (Event.IsDraft)
+                {
+                    @if (!string.IsNullOrWhiteSpace(Event.ImageUrl))
+                    {
+                        <AuthorizeView Policy="@PolicieRoles.Organizer">
+                            <MatButton OnClick="PublishClickHandle">Publish</MatButton>
+                        </AuthorizeView>
+                    }
+                }
+                else
+                {
+                    <AuthorizeView Policy="@PolicieRoles.Organizer">
+                        <MatIconButton Label="Menu" Icon="more_vert" OnClick="MenuClickHandle" RefBack="@buttonForwardRef" />
+                        <MatMenu @ref="Menu" TargetForwardRef="@buttonForwardRef">
+                            <MatList>
+
+                                @if (Event.Date > DateTime.Today)
+                                {
+                                    <MatListItem OnClick="UpdateNextEvent">Siguiente Evento</MatListItem>
+                                }
+
+                                <MatListItem OnClick="EditArticle">Editar Articulo</MatListItem>
+                            </MatList>
+                        </MatMenu>
+                    </AuthorizeView>
+                }
+
+
+            </MatCardActions>
+        }
+    </MatCard>
+</div>
+
+@code {
+    [Parameter]
+    public Event Event { get; set; }
+
+    [Parameter]
+    public EventCallback<Event> OnDeleted { get; set; }
+
+    bool isLoading = false;
+
+    string emplyImageUrl = "https://lh3.googleusercontent.com/proxy/lFY3DctAmps5RBQ6FRwpGElD_hHelTA7z5rvgQNNE7lZtBtjlSxOG4LiSf_JxuakhsY37YTHWz-vYMzx0huZrwcEXR1SzBv_4JtR9_jbKF03FQDt8Gs";
+
+    void EditClickHandle()
+    {
+        _navigationManager.NavigateTo($"events/view/{Event.Date.Year}/{Event.Date.Month}/{Event.Guid}");
+    }
+
+    async Task DeleteClickHandle()
+    {
+        isLoading = true;
+        StateHasChanged();
+        await eventService.DeleteEventAsync(Event);
+        isLoading = false;
+        StateHasChanged();
+        await OnDeleted.InvokeAsync(Event);
+
+    }
+
+    ForwardRef buttonForwardRef = new ForwardRef();
+    BaseMatMenu Menu;
+
+    void MenuClickHandle()
+    {
+        this.Menu.OpenAsync();
+    }
+
+    async Task UpdateNextEvent()
+    {
+        isLoading = true;
+        StateHasChanged();
+        await eventService.UpdateNextEventAsync(Event);
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    void EditArticle()
+    {
+        _navigationManager.NavigateTo($"events/{Event.Date.Year}/{Event.Date.Month}/{Event.Guid}/article/new");
+    }
+
+    async Task PublishClickHandle()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        var publishRequest = new ConvertDraftToPublishRequest
+        {
+            Year = Event.Date.Year,
+            Month = Event.Date.Month,
+            Id = Event.Guid
+        };
+
+        await eventService.ConvertDraftToPublishAsync(publishRequest);
+        isLoading = false;
+        StateHasChanged();
+        await OnDeleted.InvokeAsync(Event);
+    }
+
+    string GetImageUrl()
+    {
+        return string.IsNullOrWhiteSpace(Event.ImageUrl) ? emplyImageUrl : Event.ImageUrl;
+    }
+}

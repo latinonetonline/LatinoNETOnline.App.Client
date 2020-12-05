@@ -1,0 +1,104 @@
+﻿@page "/users"
+@attribute [Authorize(Policy = PolicieRoles.Admin)]
+@inject IUserClientService userService
+@inject NavigationManager navigationManager
+
+<MatSnackbar @bind-IsOpen="@snackBarIsOpen">
+    <MatSnackbarContent>Hubo un error al traer los usuario: @message </MatSnackbarContent>
+</MatSnackbar>
+
+
+@if (isLoading)
+{
+    <MatProgressBar Indeterminate="true"></MatProgressBar>
+}
+else
+{
+    <h3>Usuarios</h3>
+
+    <MatTable Items="@users" LoadInitialData="true" Striped="true" RequestApiOnlyOnce="true" AllowSelection="true" RowClass="tester"
+              RefBack="@tableForwardRef" FilterByColumnName="Username" DebounceMilliseconds="150" class="mat-elevation-z5">
+        <MatTableHeader>
+            <th>Username</th>
+            <th>Role</th>
+        </MatTableHeader>
+        <MatTableRow>
+            <td>@context.Username</td>
+            <td>@context.Role.ToString()</td>
+            <td>
+                <MatButton Raised="true" Icon="@MatIconNames.Edit" OnClick="() => EditClickHandle(context.UserId)">Editar</MatButton>
+            </td>
+            <td>
+                <MatButton Raised="true" Icon="@MatIconNames.Delete" OnClick="() => DeleteClickHandle(context.UserId)">Eliminar</MatButton>
+            </td>
+        </MatTableRow>
+    </MatTable>
+
+    <div class="row justify-content-center">
+        <MatButton Raised="true" Icon="@MatIconNames.Add" OnClick="NewClickHandle">Nuevo</MatButton>
+    </div>
+
+}
+
+
+@code {
+
+    bool isLoading = true;
+    bool snackBarIsOpen = false;
+    string message = string.Empty;
+
+    User[] users = default;
+
+    ForwardRef tableForwardRef = new ForwardRef();
+
+    void NewClickHandle()
+    {
+        navigationManager.NavigateTo("users/new");
+    }
+
+    void EditClickHandle(Guid userId)
+    {
+        navigationManager.NavigateTo($"users/edit/{userId}");
+    }
+
+    async Task DeleteClickHandle(Guid userId)
+    {
+        isLoading = true;
+        StateHasChanged();
+        var res = await userService.DeleteUserAsync(userId);
+        if (res.Success)
+        {
+            await GetUsers();
+        }
+        else
+        {
+            message = res.Message;
+            snackBarIsOpen = true;
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetUsers();
+    }
+
+    async Task GetUsers()
+    {
+        var response = await userService.GetUsersAsync();
+        if (response.Success)
+        {
+            users = response.Result.ToArray();
+        }
+        else
+        {
+            message = response.Message;
+            snackBarIsOpen = true;
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+}

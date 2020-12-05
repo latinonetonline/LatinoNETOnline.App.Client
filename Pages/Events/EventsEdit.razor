@@ -1,0 +1,120 @@
+﻿@page "/events/edit/{year}/{month}/{id}"
+@attribute [Authorize(Policy = PolicieRoles.Organizer)]
+@inject NavigationManager _navigationManager
+@inject IEventClientService eventService
+
+<MatSnackbar @bind-IsOpen="@snackBarIsOpen">
+    <MatSnackbarContent>Hubo un error al editar el evento: @message </MatSnackbarContent>
+</MatSnackbar>
+
+
+@if (isLoading)
+{
+    <MatProgressBar Indeterminate="true"></MatProgressBar>
+}
+else
+{
+    <AutoSaveEditForm Id=@($"event-edit-{Id}")  Model="Event" OnValidSubmit="FormSubmitted">
+        <DataAnnotationsValidator />
+        <div class="mat-layout-grid">
+            <div class="mat-layout-grid-inner">
+                <div class="mat-layout-grid-cell-span-6">
+
+                    <MatHeadline6 class="demo-mat-card-clean-margin">
+                        Editar Evento
+                    </MatHeadline6>
+
+
+                    <p class="input-padding">
+                        <MatStringField  @bind-Value="@Event.Title" Label="Titulo" FullWidth="true"></MatStringField>
+                        <ValidationMessage For="@(() => Event.Title)" />
+
+                    </p>
+                    <p class="input-padding">
+                        <MatStringField  @bind-Value="@Event.Description" Label="Descripción" FullWidth="true" TextArea="true"></MatStringField>
+                        <ValidationMessage For="@(() => Event.Description)" />
+                    </p>
+                    <p class="input-padding">
+                        <MatDatePicker @bind-Value="@Event.Date" PlaceHolder="Fecha" FullWidth="true" Format="MM/dd/yy H:mm:ss"></MatDatePicker>
+                        <ValidationMessage For="@(() => Event.Date)" />
+                    </p>
+                    <p class="input-padding">
+                        <MatStringField  @bind-Value="@Event.ImageUrl" Label="Flyer Url" FullWidth="true"></MatStringField>
+                        <ValidationMessage For="@(() => Event.ImageUrl)" />
+                    </p>
+                    <p class="input-padding">
+                        <MatStringField  @bind-Value="@Event.Speaker" Label="Speaker" FullWidth="true"></MatStringField>
+                        <ValidationMessage For="@(() => Event.Speaker)" />
+                    </p>
+                    <p class="input-padding">
+                        <MatStringField  @bind-Value="@Event.TwitterSpeaker" Label="Twitter del Speaker" FullWidth="true"></MatStringField>
+                        <ValidationMessage For="@(() => Event.TwitterSpeaker)" />
+                    </p>
+
+                    <MatCardActions>
+                        <MatCardActionButtons>
+                            <MatButton Raised="true" Type="submit" Icon="@MatIconNames.Edit">Editar</MatButton>
+                        </MatCardActionButtons>
+
+                        <MatCardActionIcons>
+                            <MatIconButton Icon="@MatIconNames.Close" OnClick="CancelClickHandle"></MatIconButton>
+                        </MatCardActionIcons>
+                    </MatCardActions>
+
+                </div>
+            </div>
+        </div>
+    </AutoSaveEditForm>
+}
+
+
+@code {
+
+    [Parameter]
+    public string Year { get; set; }
+    [Parameter]
+    public string Month { get; set; }
+    [Parameter]
+    public string Id { get; set; }
+
+    public Event Event = new Event();
+    bool isLoading = true;
+    bool snackBarIsOpen = false;
+    string message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Event = (await eventService.GetEventAsync(int.Parse(Year), int.Parse(Month), Guid.Parse(Id))).Result;
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    async Task FormSubmitted(EditContext editContext)
+    {
+        if (editContext.Validate())
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            Response res = await eventService.UpdateEventAsync(Event);
+
+            if (res.Success)
+            {
+                _navigationManager.NavigateTo("events");
+            }
+            else
+            {
+                message = res.Message;
+                snackBarIsOpen = true;
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    void CancelClickHandle()
+    {
+        _navigationManager.NavigateTo("events");
+    }
+
+}

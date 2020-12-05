@@ -1,0 +1,115 @@
+﻿@page "/links"
+@attribute [Authorize(Policy = PolicieRoles.Organizer)]
+@inject ILinkClientService linkService
+@inject NavigationManager navigationManager
+
+<h3>Links</h3>
+<MatSnackbar @bind-IsOpen="@snackBarIsOpen">
+    <MatSnackbarContent>Hubó un error: @message </MatSnackbarContent>
+</MatSnackbar>
+
+@if (isLoading)
+{
+    <MatProgressBar Indeterminate="true"></MatProgressBar>
+}
+else
+{
+    <MatTable Items="@links" LoadInitialData="true" Striped="true" RequestApiOnlyOnce="true" AllowSelection="true" RowClass="tester"
+              RefBack="@tableForwardRef" FilterByColumnName="Name" DebounceMilliseconds="150" class="mat-elevation-z5">
+        <MatTableHeader>
+            <th>Hash Name</th>
+            <th>Link</th>
+            <th>Copy Link</th>
+        </MatTableHeader>
+        <MatTableRow>
+            <td>@context.Name</td>
+            <td>@context.Url</td>
+            <td>
+                <MatButton Raised="true" Icon="@MatIconNames.File_copy" OnClick="() => CopyLink(context.Name)">Copy</MatButton>
+            </td>
+            <td>
+                <MatButton Raised="true" Icon="@MatIconNames.Edit" OnClick="() => EditClickHandle(context.Name)">Editar</MatButton>
+            </td>
+            <td>
+                <MatButton Raised="true" Icon="@MatIconNames.Delete" OnClick="() => DeleteClickHandle(context.Name)">Eliminar</MatButton>
+            </td>
+        </MatTableRow>
+    </MatTable>
+
+
+
+    <div class="row justify-content-center">
+        <MatButton Raised="true" Icon="@MatIconNames.Add" OnClick="NewClickHandle">Nuevo</MatButton>
+    </div>
+
+}
+
+
+@code {
+
+    LinkModel[] links = default;
+
+    ForwardRef tableForwardRef = new ForwardRef();
+
+    bool isLoading = false;
+    bool snackBarIsOpen = false;
+    string message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetLinks();
+    }
+
+    void NewClickHandle()
+    {
+        navigationManager.NavigateTo("links/new");
+    }
+
+    void EditClickHandle(string name)
+    {
+        navigationManager.NavigateTo($"links/edit/{name}");
+    }
+
+    async Task DeleteClickHandle(string name)
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        Response res = await linkService.DeleteAsync(name);
+        if (res.Success)
+        {
+            await GetLinks();
+        }
+        else
+        {
+            message = res.Message;
+            snackBarIsOpen = true;
+        }
+
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    async Task CopyLink(string linkName)
+    {
+        await linkService.CopyLink($"https://latinonet.online/links#{linkName}");
+    }
+
+    async Task GetLinks()
+    {
+        var response = await linkService.GetAllAsync();
+        if (response.Success)
+        {
+            links = response.Result.ToArray();
+        }
+        else
+        {
+            message = response.Message;
+            snackBarIsOpen = true;
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+}

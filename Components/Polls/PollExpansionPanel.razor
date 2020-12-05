@@ -1,0 +1,50 @@
+﻿@inject NavigationManager _navigationManager
+@inject IPollClientService _pollService
+
+
+@if (isLoading)
+{
+    <MatProgressBar Indeterminate="true"></MatProgressBar>
+}
+<MatExpansionPanel @bind-Expanded="@panelOpenState">
+    <MatExpansionPanelSummary>
+        <MatExpansionPanelHeader>@Poll.Question</MatExpansionPanelHeader>
+        <MatExpansionPanelSubHeader>
+            <a href="https://latinonet.online/pollresult#@Poll.PollId" target="_blank">https://latinonet.online/pollresult#@Poll.PollId</a>
+        </MatExpansionPanelSubHeader>
+    </MatExpansionPanelSummary>
+    <MatExpansionPanelDetails>
+        @foreach (var answers in @Poll.Options)
+        {
+            <p>@answers.Text</p>
+        }
+        <MatButton Raised="true" Icon="@MatIconNames.Delete" OnClick="EliminarClickHandle">Eliminar</MatButton>
+        <MatButton Raised="true" Icon="@MatIconNames.Poll" OnClick="MostrarClickHandle">Mostrar</MatButton>
+    </MatExpansionPanelDetails>
+</MatExpansionPanel>
+
+@code {
+    bool panelOpenState;
+    bool isLoading = false;
+
+    [Parameter]
+    public PollOptions Poll { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    async Task EliminarClickHandle()
+    {
+        await _pollService.DeletePollAsync(Poll.PollId);
+        await OnDelete.InvokeAsync(new object());
+    }
+
+    async Task MostrarClickHandle()
+    {
+        isLoading = true;
+        StateHasChanged();
+        await _pollService.ShowPollAsync(Poll.PollId);
+        isLoading = false;
+        StateHasChanged();
+    }
+}
