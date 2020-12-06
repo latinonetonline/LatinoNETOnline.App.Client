@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 
 using LatinoNETOnline.App.Client.Authentication;
+using LatinoNETOnline.App.Client.Authentication.Extensions;
 using LatinoNETOnline.App.Client.Core.Services;
 using LatinoNETOnline.App.Client.Security;
 using LatinoNETOnline.App.Client.Services;
@@ -37,23 +38,24 @@ namespace LatinoNETOnline.App.Client
 
             builder.Services.AddTsInteropServices();
 
-            builder.Services.AddHttpClient("api")
+            builder.Services.AddHttpClient("api", o => o.BaseAddress = new(builder.Configuration["api:BaseAddress"]))
                 .AddHttpMessageHandler(sp =>
                 {
                     var handler = sp.GetService<AuthorizationMessageHandler>()
                         .ConfigureHandler(
-                            authorizedUrls: new[] { "https://latinonetonlineapp.herokuapp.com" },
+                            authorizedUrls: new[] { builder.Configuration["api:BaseAddress"] },
                             scopes: new[] { "TokenRefresherApi",
                                               "PollApi",
                                               "YoutubeApi",
                                               "TelegramBotApi",
-                                              "IdentityServerApi", 
+                                              "IdentityServerApi",
+                                              "LatinoNetOnlineApi",
                             });
 
                     return handler;
                 });
 
-            //builder.Services.AddSingleton(sp => sp.GetService<IHttpClientFactory>().CreateClient("api"));
+            builder.Services.AddSingleton(sp => sp.GetService<IHttpClientFactory>().CreateClient("api"));
 
             builder.Services
                .AddOidcAuthentication(options =>
@@ -65,6 +67,8 @@ namespace LatinoNETOnline.App.Client
 
 
             builder.Services.AddOptions();
+
+            builder.Services.AddAuthenticationCorePolicy();
             await builder.Build().RunAsync();
         }
     }

@@ -6,7 +6,6 @@ namespace LatinoNETOnline.App.Client.Core.Models.Events
     public class Event
     {
         public Guid Guid { get; set; }
-        [MaxLength(50)]
         [Required]
         public string Title { get; set; }
         [Required]

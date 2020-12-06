@@ -1,4 +1,6 @@
 ﻿
+using LatinoNETOnline.App.Client.Core.Models;
+
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication.Internal;
 

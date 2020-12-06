@@ -1,0 +1,25 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.Security.Claims
+
+@inject NavigationManager Navigation
+@inject SignOutSessionStateManager SignOutManager
+
+<AuthorizeView>
+    <Authorized>
+        <img src="@context.User.Claims.First(a => a.Type == ClaimTypes.Thumbprint)?.Value" alt="" height="50" />
+        Hello, @context.User.Claims.First(a => a.Type == ClaimTypes.Surname)?.Value!
+        <MatButton Raised="true" OnClick="BeginSignOut">Log out</MatButton>
+    </Authorized>
+    <NotAuthorized>
+        <MatButton Raised="true" Icon="@MatIconNames.People" OnClick="@(() => Navigation.NavigateTo("/authentication/login"))">Log In with GitHub</MatButton>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code{
+    private async Task BeginSignOut(MouseEventArgs args)
+    {
+        await SignOutManager.SetSignOutState();
+        Navigation.NavigateTo("authentication/logout");
+    }
+}

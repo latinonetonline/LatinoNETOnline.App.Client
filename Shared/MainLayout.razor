@@ -10,7 +10,8 @@
                 <MatAppBarTitle>Latino .NET Online App</MatAppBarTitle>
             </MatAppBarSection>
             <MatAppBarSection Align="@MatAppBarSectionAlign.End">
-                <AuthorizeView>
+                <LoginDisplay/>
+                @*<AuthorizeView>
                     <Authorized>
                         <div class="col-md-2">
                             <img src="@identity.Claims.First(a => a.Type == ClaimTypes.Thumbprint)?.Value" alt="" height="50" />
@@ -20,9 +21,9 @@
                         </div>
                     </Authorized>
                     <NotAuthorized>
-                        <MatButton Raised="true" Icon="@MatIconNames.People" OnClick="@(() => MenuItemClickHandle("/api/account/login", true))">Log In with GitHub</MatButton>
+                        <MatButton Raised="true" Icon="@MatIconNames.People" OnClick="@(() => MenuItemClickHandle("/authentication/login"))">Log In with GitHub</MatButton>
                     </NotAuthorized>
-                </AuthorizeView>
+                </AuthorizeView>*@
                 <MatIconButton Icon="@MatIconNames.Favorite" Link="https://latinonet.online"></MatIconButton>
             </MatAppBarSection>
         </MatAppBarRow>
@@ -33,39 +34,41 @@
 
     </MatAppBarContent>
 </MatAppBarContainer>
-<MatDrawerContainer Style="width: 100vw; height: 90vh; margin-top:64px;">
+<MatDrawerContainer Style="    width: 100vw;
+    height: 90vh;
+    margin-top: 64px;">
     <MatDrawer @bind-Opened="@Opened" Mode="@MatDrawerMode.Modal">
         <MatNavMenu>
             <MatNavItem OnClick="@(() => MenuItemClickHandle("events"))"><MatIcon Icon="@MatIconNames.Event"></MatIcon>&nbsp; Eventos </MatNavItem>
 
-            <AuthorizeView Policy=@PolicieRoles.Organizer>
-                <MatNavItem OnClick="@(() => MenuItemClickHandle("links"))"><MatIcon Icon="@MatIconNames.Link"></MatIcon>&nbsp; Links To Redirect </MatNavItem>
-                <MatNavItem OnClick="@(() => MenuItemClickHandle("stream"))"><MatIcon Icon="@MatIconNames.View_stream"></MatIcon>&nbsp; Stream </MatNavItem>
 
-                <MatNavSubMenu>
-                    <MatNavSubMenuHeader>
-                        <MatNavItem AllowSelection="false"><MatIcon Icon="@MatIconNames.Wifi"></MatIcon>&nbsp; Social</MatNavItem>
-                    </MatNavSubMenuHeader>
-                    <MatNavSubMenuList>
-                        <MatNavItem OnClick="@(() => MenuItemClickHandle("twitter"))">&nbsp; Twitter </MatNavItem>
-                    </MatNavSubMenuList>
-                </MatNavSubMenu>
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("links"))"><MatIcon Icon="@MatIconNames.Link"></MatIcon>&nbsp; Links To Redirect </MatNavItem>
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("stream"))"><MatIcon Icon="@MatIconNames.View_stream"></MatIcon>&nbsp; Stream </MatNavItem>
 
-                <MatNavItem OnClick="@(() => MenuItemClickHandle("easycron"))"><MatIcon Icon="@MatIconNames.Schedule"></MatIcon>&nbsp; EasyCron </MatNavItem>
-            </AuthorizeView>
+            <MatNavSubMenu>
+                <MatNavSubMenuHeader>
+                    <MatNavItem AllowSelection="false"><MatIcon Icon="@MatIconNames.Wifi"></MatIcon>&nbsp; Social</MatNavItem>
+                </MatNavSubMenuHeader>
+                <MatNavSubMenuList>
+                    <MatNavItem OnClick="@(() => MenuItemClickHandle("twitter"))">&nbsp; Twitter </MatNavItem>
+                </MatNavSubMenuList>
+            </MatNavSubMenu>
 
-            <AuthorizeView Policy=@PolicieRoles.Admin>
-                <MatNavItem OnClick="@(() => MenuItemClickHandle("users"))"><MatIcon Icon="@MatIconNames.People"></MatIcon>&nbsp; Users </MatNavItem>
-            </AuthorizeView>
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("easycron"))"><MatIcon Icon="@MatIconNames.Schedule"></MatIcon>&nbsp; EasyCron </MatNavItem>
 
-            <AuthorizeView Policy=@PolicieRoles.Speaker>
-                <MatNavItem OnClick="@(() => MenuItemClickHandle("polls"))"><MatIcon Icon="@MatIconNames.Poll"></MatIcon>&nbsp; Polls </MatNavItem>
-            </AuthorizeView>
+
+
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("users"))"><MatIcon Icon="@MatIconNames.People"></MatIcon>&nbsp; Users </MatNavItem>
+
+
+
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("polls"))"><MatIcon Icon="@MatIconNames.Poll"></MatIcon>&nbsp; Polls </MatNavItem>
+
 
             <MatDivider></MatDivider>
-            <AuthorizeView>
-                <MatNavItem OnClick="@(() => MenuItemClickHandle("/api/account/logout", true))"><MatIcon Icon="@MatIconNames.Close"></MatIcon>&nbsp; Log Out</MatNavItem>
-            </AuthorizeView>
+
+            <MatNavItem OnClick="@(() => MenuItemClickHandle("/api/account/logout", true))"><MatIcon Icon="@MatIconNames.Close"></MatIcon>&nbsp; Log Out</MatNavItem>
+
         </MatNavMenu>
     </MatDrawer>
     <MatDrawerContent ChildContent="@Body">

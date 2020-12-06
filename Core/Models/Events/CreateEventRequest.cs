@@ -10,7 +10,6 @@ namespace LatinoNETOnline.App.Client.Core.Models.Events
             IsDraft = true;
         }
 
-        [MaxLength(50)]
         [Required]
         public string Title { get; set; }
         [Required]
