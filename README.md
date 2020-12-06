@@ -1,1 +1,0 @@
-# LatinoNETOnline.App.Client
